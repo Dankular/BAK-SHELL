@@ -1,0 +1,23 @@
+According to mdf-rs research, after getting boot page:
+1. Boot page points to first system indices page
+2. System catalog is self-describing using:
+   - sysrowsets (partition metadata)
+   - sysallocunits (page allocation info)
+   - sysschobjs (object definitions)
+   - syscolpars (column definitions)
+
+The key is that these system tables reference each other by object_id.
+For SQL Server 2005+, known system object IDs are:
+- sysrowsets: object_id = 5
+- sysallocunits: object_id = 7
+- sysschobjs: object_id = 34
+- syscolpars: object_id = 41
+
+The firstSysIndices page should contain sysallocunits records.
+Each sysallocunits record has:
+- alloc_unit_id (8 bytes at offset 0)
+- type (1 byte at offset 8)
+- container_id (8 bytes at offset 9)
+- first_page pointer (6 bytes at offset 17 or in variable data)
+
+Let me check if the records I'm reading match this structure.
