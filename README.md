@@ -1,22 +1,118 @@
 # BAK-SHELL
 
-A C# tool that extracts data from SQL Server `.BAK` backup files **without requiring SQL Server** and loads it into DuckDB for analysis.
+**Recover and restore SQL Server backups without SQL Server installed.**
+
+BAK-SHELL is a powerful data recovery tool that reads SQL Server `.BAK` backup files directly and enables you to:
+- **Restore to any database** - PostgreSQL, MySQL, SQL Server, or any DuckDB-compatible target
+- **Export to standard formats** - CSV, JSON, Parquet for use in any analytics tool
+- **Explore interactively** - Query and inspect backup data without extraction
+- **Emergency data recovery** - Extract critical data when SQL Server is unavailable
 
 ## Quick Start
 
 ```bash
-# Interactive mode - explore your backup
+# Interactive mode - explore and recover data
 dotnet run -- backup.bak -i
 
-bak2duckdb> show tables              # List all tables
+bak2duckdb> show tables              # List all tables in backup
 bak2duckdb> describe Company         # View schema
 bak2duckdb> preview Company 10       # Preview data
 bak2duckdb> SELECT COUNT(*) FROM Company WHERE Country = 'USA'
-bak2duckdb> COPY Company TO 'company.csv' (HEADER)
+bak2duckdb> COPY Company TO 'company.csv' (HEADER)  # Export to CSV
 bak2duckdb> exit
 
-# Batch mode - extract all tables to DuckDB
+# Batch mode - extract all tables
 dotnet run -- backup.bak -o output.duckdb
+```
+
+## Data Recovery & Restoration Methods
+
+### Restore to SQL Server
+
+```sql
+-- From interactive mode: Export to CSV, then use BULK INSERT
+bak2duckdb> COPY Company TO 'company.csv' (HEADER, DELIMITER ',');
+```
+
+Then in SQL Server:
+```sql
+BULK INSERT Company
+FROM 'C:\path\company.csv'
+WITH (FIRSTROW = 2, FIELDTERMINATOR = ',', ROWTERMINATOR = '\n');
+```
+
+### Restore to PostgreSQL
+
+```sql
+-- Install PostgreSQL extension
+bak2duckdb> INSTALL postgres_scanner;
+bak2duckdb> LOAD postgres_scanner;
+
+-- Connect to target database
+bak2duckdb> ATTACH 'dbname=mydb user=postgres host=localhost password=secret' AS pg (TYPE POSTGRES);
+
+-- Restore tables directly
+bak2duckdb> CREATE TABLE pg.company AS SELECT * FROM Company;
+bak2duckdb> CREATE TABLE pg.orders AS SELECT * FROM Orders;
+```
+
+### Restore to MySQL
+
+```sql
+-- Install MySQL extension
+bak2duckdb> INSTALL mysql;
+bak2duckdb> LOAD mysql;
+
+-- Connect to target database
+bak2duckdb> ATTACH 'host=localhost user=root database=mydb password=secret' AS mysql (TYPE MYSQL);
+
+-- Restore tables
+bak2duckdb> CREATE TABLE mysql.company AS SELECT * FROM Company;
+```
+
+### Export for Analytics Tools
+
+```sql
+-- Export to CSV (Excel, Tableau, Power BI)
+bak2duckdb> COPY Company TO 'company.csv' (HEADER, DELIMITER ',');
+
+-- Export to Parquet (Spark, pandas, Arrow)
+bak2duckdb> COPY Company TO 'company.parquet' (FORMAT PARQUET);
+
+-- Export to JSON (MongoDB, Elasticsearch)
+bak2duckdb> COPY Company TO 'company.json' (FORMAT JSON, ARRAY true);
+```
+
+### Emergency Data Recovery Scenarios
+
+**Scenario 1: SQL Server crashed, need specific table urgently**
+```bash
+dotnet run -- backup.bak -i
+bak2duckdb> preview CriticalTable 100  # Quick preview
+bak2duckdb> COPY CriticalTable TO 'emergency_backup.csv' (HEADER);
+```
+
+**Scenario 2: Recover deleted records from old backup**
+```bash
+dotnet run -- old_backup.bak -i
+bak2duckdb> SELECT * FROM Customers WHERE DeletedDate IS NULL;
+bak2duckdb> COPY (SELECT * FROM Customers WHERE DeletedDate IS NULL) TO 'recovered_customers.csv';
+```
+
+**Scenario 3: Migrate to cloud database (PostgreSQL on AWS RDS)**
+```bash
+dotnet run -- onprem_backup.bak -i
+bak2duckdb> INSTALL postgres_scanner; LOAD postgres_scanner;
+bak2duckdb> ATTACH 'dbname=prod user=admin host=rds.amazonaws.com password=xxx' AS aws (TYPE POSTGRES);
+bak2duckdb> CREATE TABLE aws.customers AS SELECT * FROM Customers;
+```
+
+**Scenario 4: Data audit - compare production vs backup**
+```bash
+dotnet run -- backup.bak -i --db audit.duckdb
+# Run queries to compare data states, identify changes
+bak2duckdb> SELECT COUNT(*) as backup_count FROM Customers;
+# Compare with production database
 ```
 
 ## Features
@@ -116,39 +212,6 @@ dotnet run -- backup.bak -t Company,Movement -o data.duckdb
 
 ```bash
 dotnet run -- backup.bak -o data.duckdb -q "SELECT COUNT(*) FROM Company"
-```
-
-### Exporting to Other Databases
-
-From the interactive shell, use DuckDB's built-in export capabilities:
-
-**Export to CSV/JSON/Parquet:**
-```sql
-COPY Company TO 'company.csv' (HEADER, DELIMITER ',');
-COPY Movement TO 'movement.parquet' (FORMAT PARQUET);
-COPY Goods TO 'goods.json' (FORMAT JSON);
-```
-
-**Restore to PostgreSQL:**
-```sql
-INSTALL postgres_scanner;
-LOAD postgres_scanner;
-ATTACH 'dbname=mydb user=postgres host=localhost password=secret' AS pg (TYPE POSTGRES);
-CREATE TABLE pg.company AS SELECT * FROM Company;
-```
-
-**Restore to MySQL:**
-```sql
-INSTALL mysql;
-LOAD mysql;
-ATTACH 'host=localhost user=root database=mydb password=secret' AS mysql (TYPE MYSQL);
-CREATE TABLE mysql.company AS SELECT * FROM Company;
-```
-
-**Restore to SQL Server:**
-```sql
--- Export to CSV first, then use SQL Server's BULK INSERT
-COPY Company TO 'company.csv' (HEADER, DELIMITER ',');
 ```
 
 ### Command-line options
