@@ -14,12 +14,12 @@ BAK-SHELL is a powerful data recovery tool that reads SQL Server `.BAK` backup f
 # Interactive mode - explore and recover data
 dotnet run -- backup.bak -i
 
-bak2duckdb> show tables              # List all tables in backup
-bak2duckdb> describe Company         # View schema
-bak2duckdb> preview Company 10       # Preview data
-bak2duckdb> SELECT COUNT(*) FROM Company WHERE Country = 'USA'
-bak2duckdb> COPY Company TO 'company.csv' (HEADER)  # Export to CSV
-bak2duckdb> exit
+bakshell> show tables              # List all tables in backup
+bakshell> describe Company         # View schema
+bakshell> preview Company 10       # Preview data
+bakshell> SELECT COUNT(*) FROM Company WHERE Country = 'USA'
+bakshell> COPY Company TO 'company.csv' (HEADER)  # Export to CSV
+bakshell> exit
 
 # Batch mode - extract all tables
 dotnet run -- backup.bak -o output.duckdb
@@ -31,7 +31,7 @@ dotnet run -- backup.bak -o output.duckdb
 
 ```sql
 -- From interactive mode: Export to CSV, then use BULK INSERT
-bak2duckdb> COPY Company TO 'company.csv' (HEADER, DELIMITER ',');
+bakshell> COPY Company TO 'company.csv' (HEADER, DELIMITER ',');
 ```
 
 Then in SQL Server:
@@ -45,42 +45,42 @@ WITH (FIRSTROW = 2, FIELDTERMINATOR = ',', ROWTERMINATOR = '\n');
 
 ```sql
 -- Install PostgreSQL extension
-bak2duckdb> INSTALL postgres_scanner;
-bak2duckdb> LOAD postgres_scanner;
+bakshell> INSTALL postgres_scanner;
+bakshell> LOAD postgres_scanner;
 
 -- Connect to target database
-bak2duckdb> ATTACH 'dbname=mydb user=postgres host=localhost password=secret' AS pg (TYPE POSTGRES);
+bakshell> ATTACH 'dbname=mydb user=postgres host=localhost password=secret' AS pg (TYPE POSTGRES);
 
 -- Restore tables directly
-bak2duckdb> CREATE TABLE pg.company AS SELECT * FROM Company;
-bak2duckdb> CREATE TABLE pg.orders AS SELECT * FROM Orders;
+bakshell> CREATE TABLE pg.company AS SELECT * FROM Company;
+bakshell> CREATE TABLE pg.orders AS SELECT * FROM Orders;
 ```
 
 ### Restore to MySQL
 
 ```sql
 -- Install MySQL extension
-bak2duckdb> INSTALL mysql;
-bak2duckdb> LOAD mysql;
+bakshell> INSTALL mysql;
+bakshell> LOAD mysql;
 
 -- Connect to target database
-bak2duckdb> ATTACH 'host=localhost user=root database=mydb password=secret' AS mysql (TYPE MYSQL);
+bakshell> ATTACH 'host=localhost user=root database=mydb password=secret' AS mysql (TYPE MYSQL);
 
 -- Restore tables
-bak2duckdb> CREATE TABLE mysql.company AS SELECT * FROM Company;
+bakshell> CREATE TABLE mysql.company AS SELECT * FROM Company;
 ```
 
 ### Export for Analytics Tools
 
 ```sql
 -- Export to CSV (Excel, Tableau, Power BI)
-bak2duckdb> COPY Company TO 'company.csv' (HEADER, DELIMITER ',');
+bakshell> COPY Company TO 'company.csv' (HEADER, DELIMITER ',');
 
 -- Export to Parquet (Spark, pandas, Arrow)
-bak2duckdb> COPY Company TO 'company.parquet' (FORMAT PARQUET);
+bakshell> COPY Company TO 'company.parquet' (FORMAT PARQUET);
 
 -- Export to JSON (MongoDB, Elasticsearch)
-bak2duckdb> COPY Company TO 'company.json' (FORMAT JSON, ARRAY true);
+bakshell> COPY Company TO 'company.json' (FORMAT JSON, ARRAY true);
 ```
 
 ### Emergency Data Recovery Scenarios
@@ -88,30 +88,30 @@ bak2duckdb> COPY Company TO 'company.json' (FORMAT JSON, ARRAY true);
 **Scenario 1: SQL Server crashed, need specific table urgently**
 ```bash
 dotnet run -- backup.bak -i
-bak2duckdb> preview CriticalTable 100  # Quick preview
-bak2duckdb> COPY CriticalTable TO 'emergency_backup.csv' (HEADER);
+bakshell> preview CriticalTable 100  # Quick preview
+bakshell> COPY CriticalTable TO 'emergency_backup.csv' (HEADER);
 ```
 
 **Scenario 2: Recover deleted records from old backup**
 ```bash
 dotnet run -- old_backup.bak -i
-bak2duckdb> SELECT * FROM Customers WHERE DeletedDate IS NULL;
-bak2duckdb> COPY (SELECT * FROM Customers WHERE DeletedDate IS NULL) TO 'recovered_customers.csv';
+bakshell> SELECT * FROM Customers WHERE DeletedDate IS NULL;
+bakshell> COPY (SELECT * FROM Customers WHERE DeletedDate IS NULL) TO 'recovered_customers.csv';
 ```
 
 **Scenario 3: Migrate to cloud database (PostgreSQL on AWS RDS)**
 ```bash
 dotnet run -- onprem_backup.bak -i
-bak2duckdb> INSTALL postgres_scanner; LOAD postgres_scanner;
-bak2duckdb> ATTACH 'dbname=prod user=admin host=rds.amazonaws.com password=xxx' AS aws (TYPE POSTGRES);
-bak2duckdb> CREATE TABLE aws.customers AS SELECT * FROM Customers;
+bakshell> INSTALL postgres_scanner; LOAD postgres_scanner;
+bakshell> ATTACH 'dbname=prod user=admin host=rds.amazonaws.com password=xxx' AS aws (TYPE POSTGRES);
+bakshell> CREATE TABLE aws.customers AS SELECT * FROM Customers;
 ```
 
 **Scenario 4: Data audit - compare production vs backup**
 ```bash
 dotnet run -- backup.bak -i --db audit.duckdb
 # Run queries to compare data states, identify changes
-bak2duckdb> SELECT COUNT(*) as backup_count FROM Customers;
+bakshell> SELECT COUNT(*) as backup_count FROM Customers;
 # Compare with production database
 ```
 
@@ -163,12 +163,12 @@ dotnet run -- backup.bak -i
 Interactive commands:
 
 ```sql
-bak2duckdb> show tables              -- List all tables in backup
-bak2duckdb> describe Company         -- View table schema
-bak2duckdb> preview Company 10       -- Preview first 10 rows
-bak2duckdb> SELECT COUNT(*) FROM Company  -- Run SQL queries
-bak2duckdb> COPY Company TO 'company.csv' (HEADER)  -- Export to CSV
-bak2duckdb> exit                     -- Exit shell
+bakshell> show tables              -- List all tables in backup
+bakshell> describe Company         -- View table schema
+bakshell> preview Company 10       -- Preview first 10 rows
+bakshell> SELECT COUNT(*) FROM Company  -- Run SQL queries
+bakshell> COPY Company TO 'company.csv' (HEADER)  -- Export to CSV
+bakshell> exit                     -- Exit shell
 ```
 
 The backup is parsed once at startup (~3 seconds), then you can run unlimited queries without re-parsing.

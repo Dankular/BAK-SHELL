@@ -76,7 +76,7 @@ if (interactive)
 
     while (true)
     {
-        Console.Write("bak2duckdb> ");
+        Console.Write("bakshell> ");
         var input = Console.ReadLine();
 
         if (string.IsNullOrWhiteSpace(input))
